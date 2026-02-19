@@ -1,0 +1,394 @@
+---
+title: "Statistical Reasoning 4"
+format: pdf
+editor: visual
+---
+
+# Activity 12: Statistical reasoning 4: prediction and evaluation
+
+Reading in relevant packages.
+
+```{r}
+library(brms) # for statistics
+library(tidyverse) # for data wrangling
+library(lterdatasampler)
+```
+
+We are working with fiddler crab and latitude
+
+```{r}
+pie_crab <- lterdatasampler::pie_crab
+```
+
+In this section, we will run and interpret three multiple regressions to try and understand what influences crab body width in mm (`size`). These are data from crabs (\~30 per site) collected from sites from Florida to Massachusetts. Let’s remind ourselves of the columns in the crab data:
+
+```{r}
+colnames(pie_crab)
+```
+
+## 1.1 Create hypotheses for how each variable may affect crab size
+
+### Q1.1a How might *mean* annual *water* temperature affect crab size?
+
+As it increases we hypothesize crab size will decrease.
+
+------------------------------------------------------------------------
+
+### Q1.1b How might *mean* annual *air* temperature affect crab size?
+
+As it increases we hypothesize crab size will decrease.
+
+------------------------------------------------------------------------
+
+### Q1.1c How might the *sd* (variability) of *water* temperature affect crab size?
+
+As it increases crab size will as well.
+
+------------------------------------------------------------------------
+
+### Q1.1d How might the *sd* (variability) of *air* temperature affect crab size?
+
+Air temperature will have no affect on crab size.
+
+### size \~ latitude + mean water temp
+
+```{r}
+# latitude and water model
+m.crab.lat.water <- 
+  brm(data = pie_crab, # Give the model the pie_crab data
+      # Choose a gaussian (normal) distribution
+      family = gaussian,
+      # Specify the model here. 
+      size ~ latitude + water_temp,
+      # Here's where you specify parameters for executing the Markov chains
+      # We're using similar to the defaults, except we set cores to 4 so the analysis runs faster than the default of 1
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # Setting the "seed" determines which random numbers will get sampled.
+      # In this case, it makes the randomness of the Markov chain runs reproducible 
+      # (so that both of us get the exact same results when running the model)
+      seed = 4,
+      # Save the fitted model object as output - helpful for reloading in the output later
+      file = "output/m.crab.lat.water")
+```
+
+```{r}
+summary(m.crab.lat.water)
+```
+
+```{r}
+plot(m.crab.lat.water)
+```
+
+#### Q1.2a Assess the output
+
+This looks like it ran correctly. The r hat = 1, chains are overlapping, and posterior distributions have one peak.
+
+#### Q1.2b Interpret the output
+
+1.  Latitude: For every 1 degree increase in latitude, size will increase .80 mm.
+
+    Water_temp: For every 1 degree increase in water_temp, size will increase .41 mm.
+
+2.  These results are reasonably different from 0. I know these because for both variable the 95% CI does not intercept 0.
+
+```{r}
+# latitude and air model
+m.crab.lat.air <- 
+  brm(data = pie_crab, # Give the model the pie_crab data
+      # Choose a gaussian (normal) distribution
+      family = gaussian,
+      # Specify the model here. 
+      size ~ latitude + air_temp,
+      # Here's where you specify parameters for executing the Markov chains
+      # We're using similar to the defaults, except we set cores to 4 so the analysis runs faster than the default of 1
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # Setting the "seed" determines which random numbers will get sampled.
+      # In this case, it makes the randomness of the Markov chain runs reproducible 
+      # (so that both of us get the exact same results when running the model)
+      seed = 4,
+      # Save the fitted model object as output - helpful for reloading in the output later
+      file = "output/m.crab.lat.air")
+```
+
+```{r}
+summary(m.crab.lat.air)
+```
+
+```{r}
+plot(m.crab.lat.air)
+```
+
+#### Q1.3a Assess the output
+
+Based on the rhat=1, posterior distributions having one peak, and chains overlapping, this seems to have worked.
+
+#### Q1.3b Interpret the output
+
+1.  Latitude: For every 1 degree increase in latitude, crab size will decrease .99mm.
+
+    Air_temp: For every 1 degree C increase in air temp, crab size will decrease by -1.67mm.
+
+2.  These results are reasonably different from 0. I know these because for both variable the 95% CI does not intercept 0.
+
+### size \~ latitude + mean water + mean air temp
+
+```{r}
+# latitude and air model
+m.crab.lat.air.water <- 
+  brm(data = pie_crab, # Give the model the pie_crab data
+      # Choose a gaussian (normal) distribution
+      family = gaussian,
+      # Specify the model here. 
+      size ~ latitude + air_temp + water_temp,
+      # Here's where you specify parameters for executing the Markov chains
+      # We're using similar to the defaults, except we set cores to 4 so the analysis runs faster than the default of 1
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # Setting the "seed" determines which random numbers will get sampled.
+      # In this case, it makes the randomness of the Markov chain runs reproducible 
+      # (so that both of us get the exact same results when running the model)
+      seed = 4,
+      # Save the fitted model object as output - helpful for reloading in the output later
+      file = "output/m.crab.lat.air.water")
+```
+
+```{r}
+summary(m.crab.lat.air.water)
+```
+
+```{r}
+plot(m.crab.lat.air.water)
+```
+
+#### Q1.4a Assess the output
+
+The r-hat is 1, the posterior distribution has one peak, and the chains are overlapping. This suggests to me that the model worked as expected.
+
+#### Q1.4b Interpret the output
+
+1.  Latitude: For every 1 degree increase in latitude, crab size will decrease -1.06mm.
+
+    Air Temp: For every 1 degree C increase in air temp, crab size will decrease by -2.04mm.
+
+    Water Temp: For every 1 degree C increase in water temp, crab size will decrease by 0.76mm.
+
+2.  These results are reasonably different from 0. I know these because for both variable the 95% CI does not intercept 0.
+
+#### Q1.5 How do the models differ in their estimates?
+
+These models changed quite a bit between models.
+
+Latitude changed every time first having a positive slope when evaluated with water temp, negative slope when associated with air temp, and a larger negative slope when evaluated with air and water temp.
+
+Air temperature has had a continuously negative slope, which increased when evaluated along side water temp and latitude.
+
+Water temperature has had a consistently positive slope, slightly decreasing when evaluated with air temp and latitude.
+
+#### Q1.6 Why do you think a variable’s sign changed?
+
+I think the sign of latitude changes because both air and water temperature are impacted by altitude, which in turn affects crab size. When we run models that don't include all of these variables, altitude can be masked by the impacts of water temperature and air temperature.
+
+## 1.3 Compare models using WAIC and PSIS
+
+```{r}
+# Look at "leave one out" results for all three models
+# size ~ lat + mean water
+loo(m.crab.lat.water)
+```
+
+```{r}
+# size ~ lat + mean air
+loo(m.crab.lat.air)
+```
+
+```{r}
+# size ~ lat + mean water + mean air
+loo(m.crab.lat.air.water)
+```
+
+Now we do the same for WAIC:
+
+```{r}
+# Look at "leave one out" results for all three models
+# size ~ lat + mean water
+waic(m.crab.lat.water)
+```
+
+```{r}
+# size ~ lat + mean air
+waic(m.crab.lat.air)
+```
+
+```{r}
+# size ~ lat + mean water + mean air
+waic(m.crab.lat.air.water)
+```
+
+### Q1.7 Which model has the “best” WAIC value?
+
+It looks like the model that includes latitude + mean water + mean air has the lowest WAIC value making it the "best."
+
+## 1.4 Look at uncertainty around model predictions
+
+```{r}
+preds <- ggeffects::predict_response(m.crab.lat.air.water, 
+                            interval = "prediction")
+plot(preds)
+
+```
+
+```{r}
+pp_check(m.crab.lat.air.water, type = "dens_overlay")
+```
+
+```{r}
+pp_check(m.crab.lat.air.water, type = "scatter_avg")
+```
+
+## 2. Repeat with the sd of water and air temp instead of mean temp
+
+### Q2.1 Run all three models
+
+```{r}
+# latitude + water temp sd
+m.crab.lat.water.sd <- 
+  brm(data = pie_crab, # Give the model the pie_crab data
+      # Choose a gaussian (normal) distribution
+      family = gaussian,
+      # Specify the model here. 
+      size ~ latitude + water_temp_sd,
+      # Here's where you specify parameters for executing the Markov chains
+      # We're using similar to the defaults, except we set cores to 4 so the analysis runs faster than the default of 1
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # Setting the "seed" determines which random numbers will get sampled.
+      # In this case, it makes the randomness of the Markov chain runs reproducible 
+      # (so that both of us get the exact same results when running the model)
+      seed = 4,
+      # Save the fitted model object as output - helpful for reloading in the output later
+      file = "output/m.crab.lat.water.sd")
+```
+
+```{r}
+# latitude + air temp sd
+m.crab.lat.air.sd <- 
+  brm(data = pie_crab, # Give the model the pie_crab data
+      # Choose a gaussian (normal) distribution
+      family = gaussian,
+      # Specify the model here. 
+      size ~ latitude + air_temp_sd,
+      # Here's where you specify parameters for executing the Markov chains
+      # We're using similar to the defaults, except we set cores to 4 so the analysis runs faster than the default of 1
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # Setting the "seed" determines which random numbers will get sampled.
+      # In this case, it makes the randomness of the Markov chain runs reproducible 
+      # (so that both of us get the exact same results when running the model)
+      seed = 4,
+      # Save the fitted model object as output - helpful for reloading in the output later
+      file = "output/m.crab.lat.air.sd")
+```
+
+```{r}
+# latitude and air model
+m.crab.lat.water.air.sd <- 
+  brm(data = pie_crab, # Give the model the pie_crab data
+      # Choose a gaussian (normal) distribution
+      family = gaussian,
+      # Specify the model here. 
+      size ~ latitude + water_temp_sd + air_temp_sd,
+      # Here's where you specify parameters for executing the Markov chains
+      # We're using similar to the defaults, except we set cores to 4 so the analysis runs faster than the default of 1
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      # Setting the "seed" determines which random numbers will get sampled.
+      # In this case, it makes the randomness of the Markov chain runs reproducible 
+      # (so that both of us get the exact same results when running the model)
+      seed = 4,
+      # Save the fitted model object as output - helpful for reloading in the output later
+      file = "output/m.crab.lat.water.air.sd")
+```
+
+### Q2.2 Assess all three models
+
+```{r}
+summary(m.crab.lat.air.sd)
+```
+
+```{r}
+plot(m.crab.lat.air.sd)
+```
+
+The lat + air_temp_sd model has a r-hat of 1, posterior distribution has one peak, and chains are overlapping suggesting that this model is working as anticipated.
+
+```{r}
+summary(m.crab.lat.water.sd)
+```
+
+```{r}
+plot(m.crab.lat.water.sd)
+```
+
+The lat + water_temp_sd model has a r-hat of 1, posterior distribution has one peak, and chains are overlapping suggesting that this model is working as anticipated.
+
+```{r}
+summary(m.crab.lat.water.air.sd)
+```
+
+```{r}
+plot(m.crab.lat.water.air.sd)
+```
+
+The lat + water_temp_sd + air_temp_sd model has a r-hat of 1, posterior distribution has one peak, and chains are overlapping suggesting that this model is working as anticipated.
+
+### Q2.3 Interpret all three models
+
+Lat + air_temp_sd model
+
+For every 1 degree increase in elevation, we get a .52mm increase in crab size. Becasue our 95% CI range includes zero we can not determine that air_temp_sd had a meaningful impact on crab size.
+
+Lat + water_temp_sd model
+
+FFor every 1 degree increase in elevation, we get a .48mm increase in crab size. Because our 95% CI range includes zero we can not determine that water_temp_sd had a meaningful impact on crab size.
+
+Lat + air_temp_sd + water_temp_sd model
+
+For every increase in 1 degree in elevation, we get a .56mm increase in crab size. Because our 95% CI range includes zero we can not determine that water_temp_sd or air_temp_sd has a meaningful impact on crab size.
+
+### Q2.4 How do the models differ in their parameter estimates?
+
+Latitude
+
+The model's interpretation of latitude's impact on crab size was fairly consistent. It remained as a positive slope throughout, varying from a .52-.56mm increase to crab size.
+
+Air Temp SD
+
+The model's interpretation of air temperature standard deviation's impact on crab size could not be clearly determined in either model because the 95% CI included zero. Though when factored with water_temp_sd the 95% CI did include a more negative range.
+
+Water Temp SD
+
+The model's interpretation of water temperature standard deviation's impact on crab size could not be clearly determined in either model because the 95% CI included zero. Though when factored with air_temp_sd the 95% CI did include a more positive range.
+
+### Q2.5 Calculate and compare PSIS and AIC values for each model
+
+```{r}
+loo(m.crab.lat.air.sd)
+```
+
+```{r}
+loo(m.crab.lat.water.sd)
+```
+
+```{r}
+loo(m.crab.lat.water.air.sd)
+```
+
+```{r}
+waic(m.crab.lat.air.sd)
+```
+
+```{r}
+waic(m.crab.lat.water.sd)
+```
+
+```{r}
+waic(m.crab.lat.water.air.sd)
+```
+
+1.  All Pareto K estimates look good.

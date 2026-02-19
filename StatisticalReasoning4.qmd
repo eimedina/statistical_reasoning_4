@@ -391,4 +391,7 @@ waic(m.crab.lat.water.sd)
 waic(m.crab.lat.water.air.sd)
 ```
 
-1.  All Pareto K estimates look good.
+1.  All Pareto K estimates look good (k\<0.7)
+2.  The lat + air temp sd model has the lowest PSIS.
+3.  The lat + air temp sd model has the lowest AIC.
+4.  They do!
